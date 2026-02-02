@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RGB ÷ 255 Color Picker</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <h1>BF6 Vector Color Picker</h1>
+      <p class="sub">Pick a color to see its Vector values for BF6 Portal.</p>
+
+      <div class="picker-row">
+        <input id="colorInput" type="color" value="#4f46e5" aria-label="Choose a color" />
+        <div id="swatch" class="swatch" aria-hidden="true"></div>
+      </div>
+
+      <div class="output">
+        <div class="row">
+          <span class="label">RGB</span>
+          <span id="rgbText" class="value">79, 70, 229</span>
+        </div>
+        <div class="row">
+          <span class="label">Vector</span>
+          <span id="normalizedText" class="value">0.3098, 0.2745, 0.8980</span>
+        </div>
+      </div>
+
+      <section class="icons">
+        <h2>Icons</h2>
+        <div id="iconsGrid" class="icons-grid" aria-label="Recolorable icons"></div>
+      </section>
+
+      <p class="disclaimer">
+        Battlefield, Battlefield 6, and related names, logos, and icons are
+        trademarks and/or copyrighted assets of Electronic Arts Inc. This
+        project is unofficial and not affiliated with or endorsed by
+        Electronic Arts. Icon assets remain the property of their respective
+        owners.
+      </p>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

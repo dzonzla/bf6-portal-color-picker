@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36" aria-hidden="true">
+  <defs>
+    <mask id="icon-mask">
+      <image width="36" height="36" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAkCAAAAADEa8dEAAAAlElEQVR4nK1TQQ6AIAyzjf//8oxIlELRGd2F0TVtE8ay/FXogTAoBoKZYEKRETOZeBMvoQRPQkoJk57PZkNFtMfXikfvcCitSifGjCUzKZkhrY2yxm1wKgzLZ6d8TKHRIVe/p1Clc6KPR3VzD4uddLcVVgljuEq6ECeKxGbuDecmfSYzrVA5ql3plWogs/s//Yb3tQEs2ho+pJmMmQAAAABJRU5ErkJggg==" />
+    </mask>
+  </defs>
+  <rect width="100%" height="100%" fill="currentColor" mask="url(#icon-mask)" />
+</svg>

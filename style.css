@@ -1,0 +1,132 @@
+:root {
+  color-scheme: light;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f6f7fb;
+  color: #111827;
+}
+
+.app {
+  max-width: 520px;
+  margin: 10vh auto;
+  padding: 32px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 1.6rem;
+}
+
+.sub {
+  margin: 0 0 24px;
+  color: #6b7280;
+}
+
+.picker-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+input[type="color"] {
+  width: 64px;
+  height: 64px;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.swatch {
+  flex: 1;
+  height: 64px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #4f46e5;
+}
+
+.output {
+  display: grid;
+  gap: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #f3f4f6;
+}
+
+.label {
+  color: #6b7280;
+}
+
+.value {
+  font-weight: 600;
+}
+
+.icons {
+  margin-top: 28px;
+}
+
+.icons h2 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: #374151;
+}
+
+.icons-grid {
+  --icon-color: #4f46e5;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+  gap: 12px;
+  padding: 16px;
+  background: #0f172a;
+  border-radius: 16px;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  height: 64px;
+  border-radius: 12px;
+  background: rgba(148, 163, 184, 0.08);
+  gap: 6px;
+  padding: 8px 6px;
+}
+
+.icon-glyph {
+  width: 36px;
+  height: 36px;
+  background: var(--icon-color);
+  mask: var(--icon-url) no-repeat center / contain;
+  -webkit-mask: var(--icon-url) no-repeat center / contain;
+}
+
+.icon-label {
+  font-size: 0.7rem;
+  color: #cbd5f5;
+  text-align: center;
+  line-height: 1;
+  word-break: break-word;
+}
+
+.disclaimer {
+  margin: 24px 0 0;
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
