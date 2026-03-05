@@ -32,6 +32,19 @@
         <div id="iconsGrid" class="icons-grid" aria-label="Recolorable icons"></div>
       </section>
 
+      <section class="maps">
+        <h2>Map Overlay</h2>
+        <div class="map-controls">
+          <label for="mapSelect">Map</label>
+          <select id="mapSelect" aria-label="Select a map"></select>
+        </div>
+        <div id="mapStage" class="map-stage">
+          <img id="mapImage" alt="Selected map" />
+          <div id="overlayIcon" class="map-icon" aria-hidden="true"></div>
+        </div>
+      </section>
+
+
       <p class="disclaimer">
         Battlefield, Battlefield 6, and related names, logos, and icons are
         trademarks and/or copyrighted assets of Electronic Arts Inc. This
@@ -41,6 +54,6 @@
       </p>
     </main>
 
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
   </body>
 </html>
