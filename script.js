@@ -1,5 +1,3 @@
-import { screen } from "https://esm.sh/color-blend@4.0.0";
-
 const colorInput = document.getElementById("colorInput");
 const swatch = document.getElementById("swatch");
 const rgbText = document.getElementById("rgbText");
@@ -8,7 +6,8 @@ const iconsGrid = document.getElementById("iconsGrid");
 const mapSelect = document.getElementById("mapSelect");
 const mapStage = document.getElementById("mapStage");
 const mapImage = document.getElementById("mapImage");
-const overlayIcon = document.getElementById("overlayIcon");
+const overlayCanvas = document.getElementById("overlayCanvas");
+const overlayContext = overlayCanvas?.getContext("2d", { willReadFrequently: true });
 
 const iconFiles = [
   "assets/Alert.svg",
@@ -172,6 +171,11 @@ let currentAlpha = 0.4941;
 let selectedIcon = iconFiles[0];
 let isDragging = false;
 const overlayStrength = 2;
+const overlaySize = 48;
+const iconCanvas = document.createElement("canvas");
+const iconContext = iconCanvas.getContext("2d", { willReadFrequently: true });
+let iconImage = null;
+let iconReady = false;
 
 const hexToRgb = (hex) => {
   const cleaned = hex.replace("#", "");
@@ -204,29 +208,31 @@ const update = () => {
 
 const setOverlayIcon = (file) => {
   selectedIcon = file;
-  if (overlayIcon) {
-    overlayIcon.style.setProperty("--icon-url", `url('${file}')`);
-  }
+  iconImage = new Image();
+  iconReady = false;
+  iconImage.onload = () => {
+    iconReady = true;
+    updateOverlayColor();
+  };
+  iconImage.src = file;
 };
 
 const setOverlayPosition = (x, y) => {
-  if (!overlayIcon) {
+  if (!overlayCanvas) {
     return;
   }
-  overlayIcon.style.left = `${x}px`;
-  overlayIcon.style.top = `${y}px`;
-  overlayIcon.dataset.x = `${x}`;
-  overlayIcon.dataset.y = `${y}`;
+  overlayCanvas.dataset.x = `${x}`;
+  overlayCanvas.dataset.y = `${y}`;
 };
 
 const getOverlayPosition = () => {
-  const x = Number.parseFloat(overlayIcon?.dataset.x || "0");
-  const y = Number.parseFloat(overlayIcon?.dataset.y || "0");
+  const x = Number.parseFloat(overlayCanvas?.dataset.x || "0");
+  const y = Number.parseFloat(overlayCanvas?.dataset.y || "0");
   return { x, y };
 };
 
 const updateOverlayColor = () => {
-  if (!mapContext || !mapImage || !overlayIcon || !mapImage.complete) {
+  if (!mapContext || !mapImage || !overlayContext || !mapImage.complete || !iconReady) {
     return;
   }
   const rect = mapImage.getBoundingClientRect();
@@ -235,42 +241,104 @@ const updateOverlayColor = () => {
   }
 
   const { x, y } = getOverlayPosition();
-  const imageX = Math.max(
-    0,
-    Math.min(mapImage.naturalWidth - 1, (x / rect.width) * mapImage.naturalWidth)
-  );
-  const imageY = Math.max(
-    0,
-    Math.min(mapImage.naturalHeight - 1, (y / rect.height) * mapImage.naturalHeight)
-  );
 
-  const pixel = mapContext.getImageData(Math.round(imageX), Math.round(imageY), 1, 1).data;
-  const background = { r: pixel[0], g: pixel[1], b: pixel[2] };
-  const { color: finalRgb, alpha: finalAlpha } = approximateOverlayColor(
-    background,
-    currentRgb,
-    currentAlpha
+  overlayCanvas.width = Math.round(rect.width);
+  overlayCanvas.height = Math.round(rect.height);
+  overlayContext.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+  iconCanvas.width = overlaySize;
+  iconCanvas.height = overlaySize;
+  if (iconContext) {
+    iconContext.clearRect(0, 0, overlaySize, overlaySize);
+    iconContext.drawImage(iconImage, 0, 0, overlaySize, overlaySize);
+  }
+
+  const left = x - overlaySize / 2;
+  const top = y - overlaySize / 2;
+  const scaleX = mapImage.naturalWidth / rect.width;
+  const scaleY = mapImage.naturalHeight / rect.height;
+  const bgLeft = Math.max(0, Math.floor(left * scaleX));
+  const bgTop = Math.max(0, Math.floor(top * scaleY));
+  const bgRight = Math.min(
+    mapImage.naturalWidth,
+    Math.ceil((left + overlaySize) * scaleX)
   );
-  overlayIcon.style.setProperty(
-    "--overlay-color",
-    `rgba(${finalRgb.r}, ${finalRgb.g}, ${finalRgb.b}, ${finalAlpha.toFixed(4)})`
+  const bgBottom = Math.min(
+    mapImage.naturalHeight,
+    Math.ceil((top + overlaySize) * scaleY)
   );
+  const bgWidth = Math.max(1, bgRight - bgLeft);
+  const bgHeight = Math.max(1, bgBottom - bgTop);
+  const bgData = mapContext.getImageData(bgLeft, bgTop, bgWidth, bgHeight).data;
+
+  const iconData = iconContext?.getImageData(0, 0, overlaySize, overlaySize).data;
+  if (!iconData) {
+    return;
+  }
+
+  const output = overlayContext.createImageData(overlaySize, overlaySize);
+  for (let iy = 0; iy < overlaySize; iy += 1) {
+    for (let ix = 0; ix < overlaySize; ix += 1) {
+      const screenX = left + ix;
+      const screenY = top + iy;
+      if (screenX < 0 || screenY < 0 || screenX >= rect.width || screenY >= rect.height) {
+        continue;
+      }
+
+      const maskIndex = (iy * overlaySize + ix) * 4;
+      const maskAlpha = iconData[maskIndex + 3] / 255;
+      if (maskAlpha <= 0) {
+        continue;
+      }
+
+      const bgX = Math.min(
+        bgWidth - 1,
+        Math.max(0, Math.round(screenX * scaleX) - bgLeft)
+      );
+      const bgY = Math.min(
+        bgHeight - 1,
+        Math.max(0, Math.round(screenY * scaleY) - bgTop)
+      );
+      const bgIndex = (bgY * bgWidth + bgX) * 4;
+      const bgR = bgData[bgIndex];
+      const bgG = bgData[bgIndex + 1];
+      const bgB = bgData[bgIndex + 2];
+
+      const addR = Math.min(255, bgR + currentRgb.r * currentAlpha * overlayStrength);
+      const addG = Math.min(255, bgG + currentRgb.g * currentAlpha * overlayStrength);
+      const addB = Math.min(255, bgB + currentRgb.b * currentAlpha * overlayStrength);
+      const alpha = Math.max(0, Math.min(1, currentAlpha * overlayStrength * maskAlpha));
+
+      const outR = alpha > 0 ? (addR - bgR * (1 - alpha)) / alpha : 0;
+      const outG = alpha > 0 ? (addG - bgG * (1 - alpha)) / alpha : 0;
+      const outB = alpha > 0 ? (addB - bgB * (1 - alpha)) / alpha : 0;
+
+      output.data[maskIndex] = Math.max(0, Math.min(255, Math.round(outR)));
+      output.data[maskIndex + 1] = Math.max(0, Math.min(255, Math.round(outG)));
+      output.data[maskIndex + 2] = Math.max(0, Math.min(255, Math.round(outB)));
+      output.data[maskIndex + 3] = Math.round(alpha * 255);
+    }
+  }
+
+  overlayContext.putImageData(output, Math.round(left), Math.round(top));
+
+  const label = "ABC";
+  const fontSize = 16;
+  const textX = x;
+  const textY = Math.max(fontSize, top - 18);
+
+  overlayContext.save();
+  overlayContext.font = `700 ${fontSize}px "Segoe UI", system-ui, sans-serif`;
+  overlayContext.textAlign = "center";
+  overlayContext.textBaseline = "middle";
+  overlayContext.shadowColor = `rgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 0.9)`;
+  overlayContext.shadowBlur = 22;
+  overlayContext.fillStyle = `rgb(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b})`;
+  overlayContext.fillText(label, textX, textY);
+  overlayContext.shadowBlur = 40;
+  overlayContext.fillText(label, textX, textY);
+  overlayContext.restore();
 };
-
-const approximateOverlayColor = (background, foreground, baseAlpha) => {
-  const alpha = Math.max(0, Math.min(1, baseAlpha * overlayStrength));
-  const add = (bg, fg) => Math.min(255, Math.round(bg + fg));
-
-  return {
-    color: {
-      r: add(background.r, foreground.r),
-      g: add(background.g, foreground.g),
-      b: add(background.b, foreground.b),
-    },
-    alpha,
-  };
-};
-
 
 const loadMap = (path) => {
   if (!mapImage) {
@@ -350,37 +418,26 @@ const handlePointerMove = (event) => {
 };
 
 const setupDragging = () => {
-  if (!overlayIcon || !mapStage) {
+  if (!mapStage) {
     return;
   }
 
-  overlayIcon.addEventListener("pointerdown", (event) => {
-    event.preventDefault();
-    overlayIcon.setPointerCapture(event.pointerId);
-    overlayIcon.classList.add("is-dragging");
-    isDragging = true;
-  });
-
-  overlayIcon.addEventListener("pointerup", () => {
-    overlayIcon.classList.remove("is-dragging");
-    isDragging = false;
-  });
-
-  overlayIcon.addEventListener("pointercancel", () => {
-    overlayIcon.classList.remove("is-dragging");
-    isDragging = false;
-  });
-
   mapStage.addEventListener("pointermove", handlePointerMove);
   mapStage.addEventListener("pointerdown", (event) => {
-    if (event.target === overlayIcon) {
-      return;
-    }
     const rect = mapStage.getBoundingClientRect();
     const x = Math.min(Math.max(event.clientX - rect.left, 0), rect.width);
     const y = Math.min(Math.max(event.clientY - rect.top, 0), rect.height);
     setOverlayPosition(x, y);
     updateOverlayColor();
+    isDragging = true;
+  });
+
+  mapStage.addEventListener("pointerup", () => {
+    isDragging = false;
+  });
+
+  mapStage.addEventListener("pointerleave", () => {
+    isDragging = false;
   });
 };
 
@@ -394,7 +451,7 @@ if (mapImage) {
     mapContext.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
     mapContext.drawImage(mapImage, 0, 0);
 
-    if (overlayIcon && (!overlayIcon.dataset.x || !overlayIcon.dataset.y)) {
+    if (overlayCanvas && (!overlayCanvas.dataset.x || !overlayCanvas.dataset.y)) {
       const rect = mapStage?.getBoundingClientRect();
       if (rect) {
         setOverlayPosition(rect.width / 2, rect.height / 2);
